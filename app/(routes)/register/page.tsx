@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { useAuth } from "../../../context/auth-context";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
@@ -18,18 +17,18 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { register } = useAuth();
-  const router = useRouter();
+  const { signUp } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      await register(email, password, name);
-      router.push("/"); // Redirect to home page after successful registration
+      await signUp(email, password, name);
+      // No need to manually redirect as signUp handles it
     } catch (error) {
-      console.error("Registration submission error:", error);
+      console.error("Registration error:", error);
+      // No need to show toast as signUp handles it
     } finally {
       setIsLoading(false);
     }
