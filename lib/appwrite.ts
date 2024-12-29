@@ -1,64 +1,85 @@
 // lib/appwrite.ts
-import { Client, Account, Databases, ID } from "appwrite";
+import {
+  Client,
+  Account,
+  Databases
+} from "appwrite";
 
-const client = new Client()
+const client = new Client();
+
+client
   .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT!)
   .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID!);
-export const account = new Account(client);
-export const databases = new Databases(client);
 
-// Database and Collection IDs
-export const DATABASES = {
-  MAIN: "main_database",
-};
+// Initialize services
+const account = new Account(client);
+const databases = new Databases(client);
 
-export const COLLECTIONS = {
-  WATCHLIST: "watchlist",
-  ALERTS: "alerts",
-  NEWS: "news",
-};
-
-// Helper functions for authentication
-export const createUserAccount = async (
+const createUserAccount = async (
   email: string,
   password: string,
   name: string
 ) => {
   try {
-    const response = await account.create(ID.unique(), email, password, name);
-
-    if (response) {
-      // Login user after successful account creation
-      return await loginUser(email, password);
+    await account.create(
+      "unique()", // This will generate a unique ID
+      email,
+      password,
+      name
+    );
+    // After creating account, login the user
+    const loginResponse = await loginUser(email, password);
+    if (!loginResponse) {
+      throw new Error('Failed to login after account creation');
     }
+    return loginResponse.user;
   } catch (error) {
-    console.error(error);
+    console.error("Account creation error:", error);
     throw error;
   }
 };
 
-export const loginUser = async (email: string, password: string) => {
+const loginUser = async (email: string, password: string) => {
   try {
-    return await account.createEmailSession(email, password);
+    const session = await account.createSession(email, password);
+    const user = await account.get();
+    return { session, user };
   } catch (error) {
-    console.error(error);
+    console.error("Login error:", error);
     throw error;
   }
 };
 
-export const getCurrentUser = async () => {
+const getCurrentUser = async () => {
   try {
+    // First check if we have an active session
+    const session = await account.getSession('current');
+    if (!session) {
+      throw new Error('No active session');
+    }
     return await account.get();
   } catch (error) {
-    console.error(error);
+    console.error("Get current user error:", error);
+    throw error; // Propagate error to be handled by auth context
   }
-  return null;
 };
 
-export const logout = async () => {
+// Logout helper function
+const logout = async () => {
   try {
-    return await account.deleteSession("current");
+    await account.deleteSession("current");
   } catch (error) {
-    console.error(error);
+    console.error("Logout error:", error);
+    throw error;
   }
+};
+
+export {
+  client,
+  account,
+  databases,
+  createUserAccount,
+  loginUser,
+  getCurrentUser,
+  logout,
 };
