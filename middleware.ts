@@ -7,24 +7,31 @@ const publicRoutes = ['/login', '/register']
 // List of routes that require authentication
 const protectedRoutes = ['/']
 
-export function middleware(request: NextRequest) {
-  const currentUser = request.cookies.get('sessionId')
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
+  
+  // Get Appwrite session cookie
+  const appwriteSession = request.cookies.get('a_session_' + process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID!)
+  const isAuthenticated = !!appwriteSession?.value
 
   // Check if the route requires authentication
   if (protectedRoutes.includes(pathname)) {
-    if (!currentUser) {
-      // Redirect to login if user is not authenticated
+    if (!isAuthenticated) {
+      // Store the original URL to redirect back after login
       const response = NextResponse.redirect(new URL('/login', request.url))
+      response.cookies.set('redirectTo', pathname)
       return response
     }
   }
 
   // Prevent authenticated users from accessing login/register pages
   if (publicRoutes.includes(pathname)) {
-    if (currentUser) {
-      // Redirect to home if user is already authenticated
-      const response = NextResponse.redirect(new URL('/', request.url))
+    if (isAuthenticated) {
+      // Get stored redirect path or default to home
+      const redirectTo = request.cookies.get('redirectTo')?.value || '/'
+      const response = NextResponse.redirect(new URL(redirectTo, request.url))
+      // Clear the redirect cookie
+      response.cookies.delete('redirectTo')
       return response
     }
   }

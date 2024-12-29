@@ -1,132 +1,61 @@
-import { Account, Client, Databases, ID, Models } from "appwrite";
-
-const client = new Client()
-    .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT!)
-    .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID!);
-
-// Initialize services
-const account = new Account(client);
-const databases = new Databases(client);
-
-// Database and Collection IDs
-export const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!;
-export const COLLECTIONS = {
-    ARTICLES: process.env.NEXT_PUBLIC_APPWRITE_ARTICLES_COLLECTION_ID!,
-    FINANCIAL_DATA: process.env.NEXT_PUBLIC_APPWRITE_FINANCIAL_DATA_COLLECTION_ID!,
-    USER_PREFERENCES: process.env.NEXT_PUBLIC_APPWRITE_USER_PREFERENCES_COLLECTION_ID!,
-} as const;
+"use client";
 
 // Type definitions for our collections
 export interface Article {
-    $id?: string;
-    $createdAt?: string;
-    publisher: string;
-    author: string;
-    date: string;
-    title: string;
-    body: string;
-    sector: string;
-    sentiment?: number;
-    processed: boolean;
+  $id?: string;
+  $createdAt?: string;
+  publisher: string;
+  author: string;
+  date: string;
+  title: string;
+  body: string;
+  sector: string;
+  sentiment?: number;
+  processed: boolean;
 }
 
 export interface FinancialData {
-    $id?: string;
-    $createdAt?: string;
-    symbol: string;
-    dataType: string;
-    value: number;
-    timestamp: string;
-    source: string;
+  $id?: string;
+  $createdAt?: string;
+  symbol: string;
+  dataType: string;
+  value: number;
+  timestamp: string;
+  source: string;
 }
 
 export interface UserPreferences {
-    $id?: string;
-    $createdAt?: string;
-    userId: string;
-    sectors: string[];
-    symbols: string[];
-    emailNotifications: boolean;
-    pushNotifications: boolean;
+  $id?: string;
+  $createdAt?: string;
+  userId: string;
+  sectors: string[];
+  symbols: string[];
+  emailNotifications: boolean;
+  pushNotifications: boolean;
 }
 
-// Authentication functions
-export const createUserAccount = async (
-    email: string,
-    password: string,
-    name: string
-): Promise<Models.User<Models.Preferences>> => {
-    try {
-        const user = await account.create(ID.unique(), email, password, name);
-        await loginUser(email, password);
-        return user;
-    } catch (error) {
-        console.error("Account creation error:", error);
-        throw error;
-    }
-};
+// Constants
+export const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE!;
+export const COLLECTIONS = {
+  ARTICLES: process.env.NEXT_PUBLIC_APPWRITE_ARTICLES_COLLECTION_ID!,
+  FINANCIAL_DATA: process.env.NEXT_PUBLIC_APPWRITE_FINANCIAL_DATA_COLLECTION_ID!,
+  USER_PREFERENCES: process.env.NEXT_PUBLIC_APPWRITE_USER_PREFERENCES_COLLECTION_ID!,
+} as const;
 
-export const loginUser = async (
-    email: string,
-    password: string
-): Promise<{ session: Models.Session; user: Models.User<Models.Preferences> }> => {
-    try {
-        const session = await account.createSession(email, password);
-        const user = await account.get();
-        return { session, user };
-    } catch (error) {
-        console.error("Login error:", error);
-        throw error;
-    }
-};
+// Client-side wrapper functions for server actions
+export async function createUserAccount(email: string, password: string, name: string) {
+  const response = await fetch('/api/auth/register', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ email, password, name }),
+  });
 
-export const getCurrentUser = async (): Promise<Models.User<Models.Preferences>> => {
-    try {
-        return await account.get();
-    } catch (error) {
-        console.error("Get current user error:", error);
-        throw error;
-    }
-};
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to create account');
+  }
 
-export const logout = async (): Promise<void> => {
-    try {
-        await account.deleteSession('current');
-    } catch (error) {
-        console.error("Logout error:", error);
-        throw error;
-    }
-};
-
-// Database helper functions
-export const createArticle = async (article: Omit<Article, '$id' | '$createdAt'>): Promise<Models.Document> => {
-    return await databases.createDocument(
-        DATABASE_ID,
-        COLLECTIONS.ARTICLES,
-        ID.unique(),
-        article
-    );
-};
-
-export const createFinancialData = async (data: Omit<FinancialData, '$id' | '$createdAt'>): Promise<Models.Document> => {
-    return await databases.createDocument(
-        DATABASE_ID,
-        COLLECTIONS.FINANCIAL_DATA,
-        ID.unique(),
-        data
-    );
-};
-
-export const updateUserPreferences = async (
-    userId: string,
-    preferences: Partial<Omit<UserPreferences, '$id' | '$createdAt' | 'userId'>>
-): Promise<Models.Document> => {
-    return await databases.updateDocument(
-        DATABASE_ID,
-        COLLECTIONS.USER_PREFERENCES,
-        userId,
-        preferences
-    );
-};
-
-export { client, account, databases, ID };
+  return response.json();
+}

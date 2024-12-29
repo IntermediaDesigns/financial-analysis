@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { useAuth } from "../../../context/auth-context";
+import { redirect } from "next/navigation";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import {
@@ -11,28 +10,44 @@ import {
   CardTitle,
 } from "../../../components/ui/card";
 import Link from "next/link";
+import { createUserAccount } from "../../../lib/appwrite";
+import { useState } from "react";
+import { toast } from "../../../hooks/use-toast";
 
 export default function RegisterPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { signUp } = useAuth();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     setIsLoading(true);
 
     try {
-      await signUp(email, password, name);
-      // No need to manually redirect as signUp handles it
+      const formData = new FormData(event.currentTarget);
+      const email = formData.get("email") as string;
+      const password = formData.get("password") as string;
+      const name = formData.get("name") as string;
+
+      if (!email || !password || !name) {
+        throw new Error("Please fill in all fields");
+      }
+
+      await createUserAccount(email, password, name);
+      toast({
+        title: "Account created",
+        description: "You have been successfully registered",
+      });
+      redirect("/");
     } catch (error) {
       console.error("Registration error:", error);
-      // No need to show toast as signUp handles it
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to register",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
-  };
+  }
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">
@@ -43,39 +58,40 @@ export default function RegisterPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={onSubmit} className="space-y-4">
             <div className="space-y-2">
               <Input
-                type="text"
+                id="name"
+                name="name"
                 placeholder="Name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
+                type="text"
                 disabled={isLoading}
+                required
               />
             </div>
             <div className="space-y-2">
               <Input
-                type="email"
+                id="email"
+                name="email"
                 placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
+                type="email"
                 disabled={isLoading}
+                required
               />
             </div>
             <div className="space-y-2">
               <Input
-                type="password"
+                id="password"
+                name="password"
                 placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
+                type="password"
+                minLength={8}
                 disabled={isLoading}
+                required
               />
             </div>
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Creating account..." : "Register"}
+              {isLoading ? "Registering..." : "Register"}
             </Button>
             <div className="text-center text-sm">
               Already have an account?{" "}
