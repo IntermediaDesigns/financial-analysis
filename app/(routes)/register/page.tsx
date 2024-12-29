@@ -5,7 +5,12 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "../../../context/auth-context";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../../../components/ui/card";
 import Link from "next/link";
 
 export default function RegisterPage() {
@@ -19,7 +24,7 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
+
     try {
       await register(email, password, name);
       router.push("/"); // Redirect to home page after successful registration
@@ -34,7 +39,9 @@ export default function RegisterPage() {
     <div className="flex items-center justify-center min-h-screen bg-background">
       <Card className="w-[350px]">
         <CardHeader>
-          <CardTitle className="text-2xl font-bold text-center">Register</CardTitle>
+          <CardTitle className="text-2xl font-bold text-center">
+            Register
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -68,11 +75,7 @@ export default function RegisterPage() {
                 disabled={isLoading}
               />
             </div>
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={isLoading}
-            >
+            <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? "Creating account..." : "Register"}
             </Button>
             <div className="text-center text-sm">
