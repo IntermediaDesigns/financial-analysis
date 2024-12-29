@@ -1,4 +1,4 @@
-import { Account, Client, Databases, ID, Models } from 'appwrite';
+import { Account, Client, Databases, ID, Models } from "appwrite";
 
 const client = new Client()
     .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT!)
@@ -8,12 +8,12 @@ const client = new Client()
 const account = new Account(client);
 const databases = new Databases(client);
 
-// Collection and Database IDs
+// Database and Collection IDs
 export const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!;
 export const COLLECTIONS = {
-    ARTICLES: 'articles',
-    FINANCIAL_DATA: 'financial_data',
-    USER_PREFERENCES: 'user_preferences'
+    ARTICLES: process.env.NEXT_PUBLIC_APPWRITE_ARTICLES_COLLECTION_ID!,
+    FINANCIAL_DATA: process.env.NEXT_PUBLIC_APPWRITE_FINANCIAL_DATA_COLLECTION_ID!,
+    USER_PREFERENCES: process.env.NEXT_PUBLIC_APPWRITE_USER_PREFERENCES_COLLECTION_ID!,
 } as const;
 
 // Type definitions for our collections
@@ -46,10 +46,8 @@ export interface UserPreferences {
     userId: string;
     sectors: string[];
     symbols: string[];
-    notificationPreferences: {
-        email: boolean;
-        push: boolean;
-    };
+    emailNotifications: boolean;
+    pushNotifications: boolean;
 }
 
 // Authentication functions
